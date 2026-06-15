@@ -1,0 +1,95 @@
+# =====================================================================
+# Bot de Arbitragem — Configuração
+# =====================================================================
+
+# Modo de operação: "paper" (simulado) ou "live" (real).
+# ATENÇÃO: o modo live está intencionalmente bloqueado no código.
+# Só habilite depois de validar a estratégia com os logs do paper trading.
+mode: paper
+
+exchanges:
+  binance:
+    enabled: true
+    taker_fee: 0.001        # 0.10% — ajuste se você tem desconto (BNB/VIP)
+    # api_key / secret NÃO são necessários para paper trading
+    # (dados públicos de orderbook). Preencha apenas para modo live.
+    api_key: ""
+    secret: ""
+  okx:
+    enabled: true
+    taker_fee: 0.001        # 0.10%
+    api_key: ""
+    secret: ""
+    password: ""            # OKX exige passphrase no modo live
+  bybit:
+    enabled: true
+    taker_fee: 0.001        # 0.10%
+    api_key: ""
+    secret: ""
+
+# Pares monitorados (precisam existir nas 3 corretoras)
+symbols:
+  - BTC/USDT
+  - ETH/USDT
+  - SOL/USDT
+  - XRP/USDT
+
+strategy:
+  # Tamanho de cada operação simulada, em USDT
+  trade_amount_usd: 500
+  # Lucro líquido mínimo (já descontadas as taxas dos dois lados) para
+  # considerar uma oportunidade, em %. Abaixo disso só registra no log
+  # como "observada" se passar de log_threshold_pct.
+  min_profit_pct: 0.10
+  # Registra no CSV qualquer spread líquido acima deste valor, mesmo que
+  # não execute — útil para calibrar min_profit_pct depois.
+  log_threshold_pct: 0.0
+  # Margem extra de slippage aplicada na simulação de execução (%), para
+  # que o resultado do paper trading seja conservador e realista.
+  slippage_buffer_pct: 0.03
+  # Intervalo entre varreduras do detector (segundos)
+  scan_interval_sec: 0.5
+  # Tempo mínimo entre duas execuções no mesmo par+rota (segundos),
+  # evita disparar várias vezes sobre o mesmo orderbook.
+  cooldown_sec: 5
+
+risk:
+  # Idade máxima do orderbook para ser considerado válido (ms).
+  # Protege contra operar com dados congelados/atrasados.
+  max_book_age_ms: 3000
+  # Desvio máximo permitido do preço de uma corretora em relação à
+  # mediana das outras (%). Protege contra feed corrompido.
+  max_price_deviation_pct: 5.0
+  # Spread líquido acima disso é considerado suspeito (mercado travado,
+  # feed ruim, par deslistado) — registra mas NÃO opera.
+  suspicious_spread_pct: 3.0
+  # Limite de perda diária simulada (USDT). Atingiu, o bot para de operar
+  # até o dia seguinte (UTC).
+  max_daily_loss_usd: 50
+  # Máximo de operações por minuto (proteção contra loop descontrolado)
+  max_trades_per_minute: 6
+  # Erros consecutivos de websocket por corretora antes de pausar e
+  # reconectar com backoff
+  max_consecutive_errors: 5
+  # Exposição máxima total em posições (USDT) — no modelo de inventário
+  # a exposição líquida é ~0, mas limita o giro por segurança.
+  max_open_exposure_usd: 2000
+
+paper:
+  # Saldos iniciais simulados POR corretora. Arbitragem cross-exchange
+  # sem transferência exige inventário dos dois lados: USDT para comprar
+  # e a moeda base para vender.
+  initial_balances:
+    USDT: 5000
+    BTC: 0.02
+    ETH: 0.5
+    SOL: 10
+    XRP: 1000
+
+logging:
+  dir: logs
+  # Arquivos gerados:
+  #   opportunities.csv — toda oportunidade detectada (executada ou não)
+  #   trades.csv        — operações simuladas executadas
+  #   bot.log           — log geral
+  status_interval_sec: 60

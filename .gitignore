@@ -1,0 +1,20 @@
+# Ambiente virtual (recrie com: python3 -m venv venv && venv/bin/pip install -r requirements.txt)
+venv/
+.venv/
+
+# Caches do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Saídas geradas em runtime (logs e CSVs do paper trading)
+logs/
+*.log
+
+# Kill switch
+STOP
+
+# Arquivos de IDE / SO
+.vscode/
+.idea/
+.DS_Store
