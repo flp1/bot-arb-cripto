@@ -5,6 +5,46 @@ detecta diferenças de preço entre elas e simula a execução (**paper
 trading**) registrando tudo em CSV para você decidir, com dados, se a
 estratégia compensa antes de arriscar dinheiro real.
 
+## ⚠️ RESULTADO OBTIDO — leia antes de investir tempo ou dinheiro
+
+**Conclusão direta: com taxa taker de 0,1%, esta estratégia NÃO é
+lucrativa. Não vale a pena investir nela como está.** Isto não é
+opinião — é o que os logos de uma sessão real de paper trading mostram.
+
+Sessão de validação: **~9,6 horas, 25.623 oportunidades observadas**
+(4 pares × 6 rotas, Binance/OKX/Bybit), taxa 0,1% taker dos dois lados.
+
+| Métrica | Resultado |
+|---|---|
+| Lucro líquido (após taxas) — **mediana** | **-0,205%** (prejuízo) |
+| Lucro líquido — média / p99 | -0,205% / -0,185% |
+| Observações com líquido **positivo** | **20 de 25.623 (0,078%)** |
+| Spread **bruto** cruzando o zero | 25,2% do tempo (mediana do bruto: -0,005%) |
+| Trades "executados" no paper | 3 — **todos artefatos de feed, ver abaixo** |
+
+**O detalhe que mata a tese:** as únicas 20 oportunidades com lucro
+positivo aconteceram **exclusivamente durante reconexões de websocket**,
+quando o book de uma corretora **congelou** (preços de até **13 minutos
+atrás**) enquanto as outras seguiam atualizando. Era um spread que **não
+existia de verdade**. As travas de risco rejeitaram 14 dos 17 sinais
+fantasma por book velho; 3 escaparam na borda do limite de idade e
+viraram "lucro" ilusório no CSV.
+
+**Por que dá nisso:** a diferença bruta de preço entre grandes corretoras
+em pares líquidos existe (cruza o zero 25% do tempo), mas é minúscula
+(mediana ~0%). O round-trip de **0,2% em taxas** engole qualquer spread
+real. Arbitragem espacial nesses pares é disputada por players com
+colocation e taxas muito menores — sobra prejuízo para quem paga 0,1%.
+
+**Quando poderia mudar:** apenas com taxa real bem menor (maker, tier
+VIP, desconto BNB). A 0,1% taker, os dados são conclusivos: não compensa.
+
+> O bot em si está **tecnicamente correto** (pipeline, travas de risco e
+> logging foram validados por horas via `selftest.py` + um watchdog). O
+> problema não é o código — é a estratégia não ser viável no mundo real
+> com essas taxas. Veja a seção *"Como interpretar os resultados"* e rode
+> `venv/bin/python analyze.py logs/` nos seus próprios dados.
+
 ## Como funciona a estratégia
 
 Arbitragem espacial com **modelo de inventário**: você mantém USDT e as

@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 import signal
+import time
 
 from .config import load_config
 from .detector import Detector
@@ -38,6 +39,9 @@ class Bot:
                 "com os CSVs do paper trading primeiro.")
 
         self._stop = asyncio.Event()
+        # Throttle de log por rota para oportunidades não executadas:
+        # (symbol, buy_ex, sell_ex) -> último timestamp registrado.
+        self._log_times = {}
 
     # ------------------------------------------------------------------
     async def run(self):
@@ -71,6 +75,7 @@ class Bot:
     # ------------------------------------------------------------------
     async def _detector_loop(self):
         interval = self.cfg["strategy"]["scan_interval_sec"]
+        log_cooldown = self.cfg["strategy"].get("log_cooldown_sec", 0)
         while not self._stop.is_set():
             try:
                 for opp in self.detector.scan():
@@ -84,11 +89,23 @@ class Bot:
                         else:
                             self.csv.log_opportunity(opp, False,
                                                      "insufficient_balance")
-                    else:
+                    elif self._should_log(opp, log_cooldown):
+                        # Oportunidades não executadas (inclui as "quase lá")
+                        # entram no CSV com throttle por rota para não inundar.
                         self.csv.log_opportunity(opp, False, rejection)
             except Exception:
                 log.exception("Erro no loop do detector")
             await asyncio.sleep(interval)
+
+    def _should_log(self, opp, cooldown):
+        if cooldown <= 0:
+            return True
+        key = (opp.symbol, opp.buy_exchange, opp.sell_exchange)
+        now = time.time()
+        if now - self._log_times.get(key, 0) >= cooldown:
+            self._log_times[key] = now
+            return True
+        return False
 
     async def _status_loop(self):
         interval = self.cfg["logging"]["status_interval_sec"]

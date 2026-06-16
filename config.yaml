@@ -42,8 +42,15 @@ strategy:
   # como "observada" se passar de log_threshold_pct.
   min_profit_pct: 0.10
   # Registra no CSV qualquer spread líquido acima deste valor, mesmo que
-  # não execute — útil para calibrar min_profit_pct depois.
-  log_threshold_pct: 0.0
+  # não execute — útil para calibrar min_profit_pct depois. Use um valor
+  # NEGATIVO para também registrar as oportunidades "quase lá" (spread
+  # líquido negativo) e enxergar a distribuição de quão perto o mercado
+  # chega do break-even. Ex.: -0.5 registra tudo até -0,5% líquido.
+  log_threshold_pct: -0.5
+  # Para não inundar o CSV (o scan roda a cada scan_interval_sec sobre
+  # ~24 rotas), cada rota só é registrada no máximo uma vez a cada
+  # log_cooldown_sec quando NÃO executada. 0 desliga o throttle.
+  log_cooldown_sec: 30
   # Margem extra de slippage aplicada na simulação de execução (%), para
   # que o resultado do paper trading seja conservador e realista.
   slippage_buffer_pct: 0.03
